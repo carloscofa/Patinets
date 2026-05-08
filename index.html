@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VMP · Consultor de Sancions</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0f14;
+    --surface: #141720;
+    --surface2: #1c2030;
+    --border: #252a3a;
+    --accent: #3b82f6;
+    --accent2: #f59e0b;
+    --danger: #ef4444;
+    --text: #e2e8f0;
+    --muted: #64748b;
+    --highlight-bg: rgba(59,130,246,0.08);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+    padding: 0 0 60px;
+  }
+
+  /* HEADER */
+  header {
+    background: linear-gradient(135deg, #0f1829 0%, #1a1f35 60%, #0d1220 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 32px 24px 28px;
+    position: relative;
+    overflow: hidden;
+  }
+  header::before {
+    content: '';
+    position: absolute;
+    top: -40px; right: -40px;
+    width: 200px; height: 200px;
+    background: radial-gradient(circle, rgba(59,130,246,0.15) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .badge {
+    display: inline-block;
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--accent);
+    background: rgba(59,130,246,0.1);
+    border: 1px solid rgba(59,130,246,0.3);
+    border-radius: 4px;
+    padding: 3px 10px;
+    margin-bottom: 12px;
+  }
+  h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(22px, 5vw, 36px);
+    font-weight: 800;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    color: #fff;
+  }
+  h1 span { color: var(--accent); }
+  .subtitle {
+    margin-top: 8px;
+    font-size: 13px;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+  }
+
+  /* STATS BAR */
+  .stats-bar {
+    display: flex;
+    gap: 16px;
+    padding: 14px 24px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+  }
+  .stat {
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .stat strong { color: var(--accent); font-size: 15px; }
+
+  /* CONTROLS */
+  .controls {
+    padding: 20px 24px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .search-wrap {
+    position: relative;
+  }
+  .search-wrap svg {
+    position: absolute;
+    left: 14px; top: 50%;
+    transform: translateY(-50%);
+    color: var(--muted);
+    pointer-events: none;
+  }
+  #search {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    padding: 11px 16px 11px 42px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  #search:focus { border-color: var(--accent); }
+  #search::placeholder { color: var(--muted); }
+
+  .filters {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .filter-btn {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.05em;
+    padding: 6px 14px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .filter-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .filter-btn.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
+  .filter-btn.cat-circulacio.active { background: #3b82f6; border-color: #3b82f6; }
+  .filter-btn.cat-condicio.active { background: #8b5cf6; border-color: #8b5cf6; }
+  .filter-btn.cat-equipament.active { background: #f59e0b; border-color: #f59e0b; color: #000; }
+  .filter-btn.cat-estacionament.active { background: #10b981; border-color: #10b981; }
+  .filter-btn.cat-vehicle.active { background: #ef4444; border-color: #ef4444; }
+
+  /* RESULTS */
+  .results-header {
+    padding: 16px 24px 8px;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  #results {
+    padding: 0 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    transition: border-color 0.2s, transform 0.15s;
+    cursor: default;
+    animation: fadeIn 0.2s ease;
+  }
+  .card:hover {
+    border-color: rgba(59,130,246,0.4);
+    transform: translateX(2px);
+  }
+  @keyframes fadeIn { from { opacity:0; transform: translateY(4px); } to { opacity:1; transform: translateY(0); } }
+
+  .card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 10px;
+  }
+  .card-text {
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--text);
+    flex: 1;
+  }
+  .card-text mark {
+    background: rgba(245,158,11,0.25);
+    color: var(--accent2);
+    border-radius: 2px;
+    padding: 0 2px;
+  }
+
+  .card-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+  .sanccio {
+    font-family: 'Syne', sans-serif;
+    font-size: 20px;
+    font-weight: 800;
+    color: var(--danger);
+    white-space: nowrap;
+  }
+  .article {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 2px 8px;
+  }
+
+  .card-tags {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .tag {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.05em;
+    padding: 2px 8px;
+    border-radius: 10px;
+    border: 1px solid;
+  }
+  .tag-circulacio { color: #60a5fa; border-color: rgba(96,165,250,0.3); background: rgba(96,165,250,0.08); }
+  .tag-condicio   { color: #a78bfa; border-color: rgba(167,139,250,0.3); background: rgba(167,139,250,0.08); }
+  .tag-equipament { color: #fbbf24; border-color: rgba(251,191,36,0.3); background: rgba(251,191,36,0.08); }
+  .tag-estacionament { color: #34d399; border-color: rgba(52,211,153,0.3); background: rgba(52,211,153,0.08); }
+  .tag-vehicle    { color: #f87171; border-color: rgba(248,113,113,0.3); background: rgba(248,113,113,0.08); }
+
+  /* VMP INFO SECTION */
+  .vmp-info {
+    margin: 20px 16px 0;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .vmp-info-header {
+    background: linear-gradient(90deg, rgba(59,130,246,0.15), transparent);
+    padding: 12px 16px;
+    font-family: 'Syne', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: 0.05em;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    user-select: none;
+  }
+  .vmp-info-body {
+    padding: 16px;
+    display: none;
+  }
+  .vmp-info-body.open { display: block; }
+  .specs-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .spec-item {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px;
+  }
+  .spec-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 4px;
+  }
+  .spec-value {
+    font-family: 'Syne', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text);
+  }
+  .nota {
+    margin-top: 12px;
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.6;
+    padding: 10px;
+    background: var(--surface2);
+    border-left: 3px solid var(--accent2);
+    border-radius: 0 6px 6px 0;
+  }
+
+  .no-results {
+    text-align: center;
+    padding: 40px;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="badge">Mossos d'Esquadra · USC</div>
+  <h1>Sancions <span>VMP</span></h1>
+  <div class="subtitle">O.M. Arts. 58–60 · Vehicles de Mobilitat Personal</div>
+</header>
+
+<div class="stats-bar">
+  <div class="stat"><strong id="total-count">23</strong> infraccions</div>
+  <div class="stat"><strong id="filtered-count">23</strong> visibles</div>
+  <div class="stat">Import: <strong>200 €</strong> cadascuna</div>
+</div>
+
+<div class="controls">
+  <div class="search-wrap">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+    <input type="text" id="search" placeholder="Cerca infracció, article, paraula clau…">
+  </div>
+  <div class="filters">
+    <button class="filter-btn active" data-cat="all">Totes</button>
+    <button class="filter-btn cat-circulacio" data-cat="circulacio">🚦 Circulació</button>
+    <button class="filter-btn cat-condicio" data-cat="condicio">🚨 Conducció</button>
+    <button class="filter-btn cat-equipament" data-cat="equipament">⛑️ Equipament</button>
+    <button class="filter-btn cat-vehicle" data-cat="vehicle">🛴 Vehicle</button>
+    <button class="filter-btn cat-estacionament" data-cat="estacionament">🅿️ Estacionament</button>
+  </div>
+</div>
+
+<div class="results-header" id="results-label">RESULTATS</div>
+<div id="results"></div>
+
+<div class="vmp-info">
+  <div class="vmp-info-header" onclick="toggleInfo()">
+    ℹ️ Característiques tècniques VMP de transport personal
+    <span id="info-toggle">▼</span>
+  </div>
+  <div class="vmp-info-body" id="info-body">
+    <div class="specs-grid">
+      <div class="spec-item">
+        <div class="spec-label">Velocitat màxima</div>
+        <div class="spec-value">6 – 25 km/h</div>
+      </div>
+      <div class="spec-item">
+        <div class="spec-label">Massa en ordre de marxa</div>
+        <div class="spec-value">&lt; 50 kg</div>
+      </div>
+      <div class="spec-item">
+        <div class="spec-label">Potència (sense auto-eq.)</div>
+        <div class="spec-value">≤ 1.000 W</div>
+      </div>
+      <div class="spec-item">
+        <div class="spec-label">Potència (amb auto-eq.)</div>
+        <div class="spec-value">≤ 2.500 W</div>
+      </div>
+      <div class="spec-item" style="grid-column: span 2;">
+        <div class="spec-label">Longitud màxima</div>
+        <div class="spec-value">200 cm</div>
+      </div>
+    </div>
+    <div class="nota">
+      ⚠️ A partir del <strong>22 de gener de 2024</strong> els VMP han de portar un marcatge de fàbrica únic, permanent i llegible amb: número de sèrie, certificat, marca, model i any de fabricació.<br><br>
+      ⚠️ Si el <strong>seient del VMP</strong> es situa a una <strong>alçada superior a 54 cm</strong>, el vehicle entra dins de l'àmbit del Reglament (UE) núm. 168/2013 i <strong>requereix autorització administrativa per circular i per conduir</strong>.
+    </div>
+  </div>
+</div>
+
+<script>
+const infraccions = [
+  { art: "58.1", text: "Circular en un VMP en espais no autoritzat (només pot per les calçades, pels carrils bici i per les zones especialment habilitades)", cat: "circulacio", eur: 200 },
+  { art: "58.2", text: "Circular en un VMP amb les característiques tècniques manipulades", cat: "vehicle", eur: 200 },
+  { art: "58.3", text: "Circular en un VMP un menor de 16 anys", cat: "condicio", eur: 200 },
+  { art: "58.4.A", text: "Conduir un VMP no controlant el vehicle", cat: "condicio", eur: 200 },
+  { art: "58.4.B", text: "Circular en un VMP sota els efectes de l'alcohol i/o les substàncies prohibides, i haurà de sotmetre's als tests d'alcoholèmia i/o estupefaents de conformitat amb la normativa vigent", cat: "condicio", eur: 200 },
+  { art: "58.4.C", text: "Circular en un VMP sense respectar la preferència de pas de les persones vianants", cat: "circulacio", eur: 200 },
+  { art: "58.4.D", text: "Utilitzar el conductor d'un VMP cascos o auriculars connectats a aparells reproductors de so o a qualsevol altre tipus de dispositiu", cat: "equipament", eur: 200 },
+  { art: "58.4.E", text: "Utilitzar un conductor de VMP dispositius de telefonia mòbil, així com qualsevol altre mitjà o sistema de comunicació que impliqui un ús manual", cat: "equipament", eur: 200 },
+  { art: "58.4.F", text: "Circular en un VMP utilitzant només una de les rodes del vehicle", cat: "condicio", eur: 200 },
+  { art: "58.4.G", text: "Circular en un VMP agafant-se a altres vehicles en marxa ni ser arrossegats", cat: "circulacio", eur: 200 },
+  { art: "58.4.H", text: "Circular en un VMP només utilitzant una de les mans al manillar", cat: "condicio", eur: 200 },
+  { art: "58.4.I", text: "Circular en un VMP fent zig-zag entre vehicles en marxa", cat: "circulacio", eur: 200 },
+  { art: "58.4.J", text: "Circular en un VMP més ocupants de les places permeses per a les quals s'ha construït el vehicle", cat: "vehicle", eur: 200 },
+  { art: "58.4.K", text: "No circular un conductor de VMP pel carril bici, o per les calçades en les quals estiguin autoritzats, per la seva dreta, no advertint del gir o maniobra o sense respectar els semàfors", cat: "circulacio", eur: 200 },
+  { art: "58.4.L", text: "Circular en un VMP realitzant maniobra d'avançament, sense advertir a l'altre conductor i posant en perill les persones que circulen en sentit contrari", cat: "circulacio", eur: 200 },
+  { art: "58.4.M", text: "Circular amb un VMP, en l'àmbit urbà, sense utilitzar un casc i/o no portar-lo correctament col·locat", cat: "equipament", eur: 200 },
+  { art: "58.4.N", text: "Circular amb un VMP, sense disposar d'un sistema de frens i timbre", cat: "vehicle", eur: 200 },
+  { art: "58.5", text: "Circular en un VMP sense llums o dispositius reflectants a la nit o en situacions de baixa visibilitat", cat: "equipament", eur: 200 },
+  { art: "59.2", text: "No respectar els conductors dels VMP les velocitats màximes permeses segons la tipologia dels carrers", cat: "circulacio", eur: 200 },
+  { art: "59.4", text: "Circular en un VMP per les voreres", cat: "circulacio", eur: 200 },
+  { art: "60", text: "Estacionar els VMP en espais prohibits per a les bicicletes", cat: "estacionament", eur: 200 },
+];
+
+const catLabels = {
+  circulacio: "Circulació",
+  condicio: "Conducció",
+  equipament: "Equipament",
+  vehicle: "Vehicle",
+  estacionament: "Estacionament",
+};
+
+let activeCat = "all";
+let searchQuery = "";
+
+function highlight(text, query) {
+  if (!query) return text;
+  const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return text.replace(new RegExp(`(${escaped})`, 'gi'), '<mark>$1</mark>');
+}
+
+function render() {
+  const q = searchQuery.toLowerCase();
+  const filtered = infraccions.filter(i => {
+    const matchCat = activeCat === "all" || i.cat === activeCat;
+    const matchSearch = !q || i.text.toLowerCase().includes(q) || i.art.toLowerCase().includes(q) || catLabels[i.cat].toLowerCase().includes(q);
+    return matchCat && matchSearch;
+  });
+
+  document.getElementById('filtered-count').textContent = filtered.length;
+  document.getElementById('results-label').textContent = `RESULTATS — ${filtered.length} infraccions`;
+
+  const container = document.getElementById('results');
+  if (filtered.length === 0) {
+    container.innerHTML = '<div class="no-results">Cap resultat per a la cerca actual</div>';
+    return;
+  }
+
+  container.innerHTML = filtered.map(i => `
+    <div class="card">
+      <div class="card-top">
+        <div class="card-text">${highlight(i.text, q)}</div>
+        <div class="card-right">
+          <div class="sanccio">${i.eur} €</div>
+          <div class="article">Art. ${i.art}</div>
+        </div>
+      </div>
+      <div class="card-tags">
+        <span class="tag tag-${i.cat}">${catLabels[i.cat]}</span>
+      </div>
+    </div>
+  `).join('');
+}
+
+document.getElementById('search').addEventListener('input', e => {
+  searchQuery = e.target.value;
+  render();
+});
+
+document.querySelectorAll('.filter-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    activeCat = btn.dataset.cat;
+    render();
+  });
+});
+
+function toggleInfo() {
+  const body = document.getElementById('info-body');
+  const toggle = document.getElementById('info-toggle');
+  body.classList.toggle('open');
+  toggle.textContent = body.classList.contains('open') ? '▲' : '▼';
+}
+
+render();
+</script>
+</body>
+</html>
