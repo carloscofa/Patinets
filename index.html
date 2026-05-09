@@ -67,22 +67,57 @@ html,body{background:var(--bg);color:var(--lbl);font-family:-apple-system,"SF Pr
 .clr.on{display:flex}
 .clr svg{color:#fff}
 
-/* ── CHIPS ── */
-.chips{padding:6px 16px 10px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;white-space:nowrap}
-.chips::-webkit-scrollbar{display:none}
-.chip{display:inline-flex;align-items:center;font-size:14px;font-weight:500;padding:7px 16px;border-radius:20px;border:none;cursor:pointer;margin-right:6px;font-family:inherit;transition:all .15s}
-.chip-all{background:var(--lbl);color:#fff}
-.chip-all.off{background:var(--fill);color:var(--lbl2)}
-.chip-circ{background:var(--blue);color:#fff}
-.chip-circ.off{background:rgba(0,122,255,.1);color:var(--blue)}
-.chip-cond{background:var(--purple);color:#fff}
-.chip-cond.off{background:rgba(175,82,222,.1);color:var(--purple)}
-.chip-equip{background:var(--orange);color:#fff}
-.chip-equip.off{background:rgba(255,149,0,.1);color:var(--orange)}
-.chip-veh{background:var(--red);color:#fff}
-.chip-veh.off{background:rgba(255,59,48,.1);color:var(--red)}
-.chip-estat{background:var(--green);color:#fff}
-.chip-estat.off{background:rgba(52,199,89,.1);color:var(--green)}
+/* ── DROPDOWN FILTER ── */
+.dd-wrap{padding:6px 16px 10px;position:relative}
+.dd-btn{
+  display:flex;align-items:center;gap:10px;
+  width:100%;padding:11px 14px;
+  border-radius:var(--r-md);border:none;
+  font-family:inherit;font-size:15px;font-weight:600;
+  cursor:pointer;transition:all .15s;
+  position:relative;
+}
+.dd-btn .dd-arrow{margin-left:auto;transition:transform .22s;flex-shrink:0}
+.dd-btn.open .dd-arrow{transform:rotate(180deg)}
+/* color variants */
+.dd-btn[data-cat="all"]  {background:var(--lbl);color:#fff}
+.dd-btn[data-cat="circ"] {background:var(--blue);color:#fff}
+.dd-btn[data-cat="cond"] {background:var(--purple);color:#fff}
+.dd-btn[data-cat="equip"]{background:var(--orange);color:#fff}
+.dd-btn[data-cat="veh"]  {background:var(--red);color:#fff}
+.dd-btn[data-cat="estat"]{background:var(--green);color:#fff}
+
+.dd-menu{
+  display:none;
+  background:var(--card);
+  border-radius:var(--r-md);
+  overflow:hidden;
+  box-shadow:0 4px 20px rgba(0,0,0,0.12);
+  margin-top:6px;
+  animation:ddOpen .18s cubic-bezier(.32,1,.27,1);
+}
+.dd-menu.open{display:block}
+@keyframes ddOpen{from{opacity:0;transform:scaleY(.9);transform-origin:top}to{opacity:1;transform:none}}
+.dd-item{
+  display:flex;align-items:center;gap:12px;
+  padding:13px 16px;border:none;background:none;
+  width:100%;font-family:inherit;font-size:15px;font-weight:500;
+  color:var(--lbl);cursor:pointer;border-bottom:.5px solid var(--sep);
+  transition:background .1s;text-align:left;
+}
+.dd-item:last-child{border-bottom:none}
+.dd-item:active{background:var(--fill2)}
+.dd-dot{
+  width:10px;height:10px;border-radius:50%;flex-shrink:0;
+}
+.dd-dot.all  {background:var(--lbl)}
+.dd-dot.circ {background:var(--blue)}
+.dd-dot.cond {background:var(--purple)}
+.dd-dot.equip{background:var(--orange)}
+.dd-dot.veh  {background:var(--red)}
+.dd-dot.estat{background:var(--green)}
+.dd-item-ic{font-size:18px;width:28px;text-align:center}
+.dd-check{margin-left:auto;color:var(--blue);font-size:16px;font-weight:700}
 
 /* ── STATS ── */
 .stats{display:flex;gap:10px;padding:0 16px 12px}
@@ -241,14 +276,21 @@ html,body{background:var(--bg);color:var(--lbl);font-family:-apple-system,"SF Pr
   </div>
 </div>
 
-<!-- CHIPS -->
-<div class="chips">
-  <button class="chip chip-all"       data-cat="all"   onclick="setF(this)">Totes</button>
-  <button class="chip chip-circ  off" data-cat="circ"  onclick="setF(this)">🚦 Circulació</button>
-  <button class="chip chip-cond  off" data-cat="cond"  onclick="setF(this)">⚠️ Conducció</button>
-  <button class="chip chip-equip off" data-cat="equip" onclick="setF(this)">⛑️ Equipament</button>
-  <button class="chip chip-veh   off" data-cat="veh"   onclick="setF(this)">🛴 Vehicle</button>
-  <button class="chip chip-estat off" data-cat="estat" onclick="setF(this)">🅿️ Estacionament</button>
+<!-- FILTER DROPDOWN -->
+<div class="dd-wrap">
+  <button class="dd-btn" id="ddBtn" data-cat="all" onclick="togDD()">
+    <span id="ddIcon" style="font-size:18px">▪️</span>
+    <span id="ddLabel">Totes les infraccions</span>
+    <svg class="dd-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="m6 9 6 6 6-6"/></svg>
+  </button>
+  <div class="dd-menu" id="ddMenu">
+    <button class="dd-item" data-cat="all"   onclick="pickCat(this)"><span class="dd-item-ic">▪️</span><span class="dd-dot all"></span>Totes les infraccions<span class="dd-check" id="chk-all">✓</span></button>
+    <button class="dd-item" data-cat="circ"  onclick="pickCat(this)"><span class="dd-item-ic">🚦</span><span class="dd-dot circ"></span>Circulació<span class="dd-check" id="chk-circ" style="display:none">✓</span></button>
+    <button class="dd-item" data-cat="cond"  onclick="pickCat(this)"><span class="dd-item-ic">⚠️</span><span class="dd-dot cond"></span>Conducció<span class="dd-check" id="chk-cond" style="display:none">✓</span></button>
+    <button class="dd-item" data-cat="equip" onclick="pickCat(this)"><span class="dd-item-ic">⛑️</span><span class="dd-dot equip"></span>Equipament<span class="dd-check" id="chk-equip" style="display:none">✓</span></button>
+    <button class="dd-item" data-cat="veh"   onclick="pickCat(this)"><span class="dd-item-ic">🛴</span><span class="dd-dot veh"></span>Vehicle<span class="dd-check" id="chk-veh" style="display:none">✓</span></button>
+    <button class="dd-item" data-cat="estat" onclick="pickCat(this)"><span class="dd-item-ic">🅿️</span><span class="dd-dot estat"></span>Estacionament<span class="dd-check" id="chk-estat" style="display:none">✓</span></button>
+  </div>
 </div>
 
 <!-- STATS -->
@@ -394,13 +436,45 @@ document.getElementById("modal").addEventListener("touchend",e=>{
   if(e.changedTouches[0].clientY - startY > 80) closeModal({target:document.getElementById("modalBg")});
 });
 
-function setF(btn){
-  cat=btn.dataset.cat;
-  document.querySelectorAll(".chip").forEach(c=>{
-    const base=c.className.split(" ").find(x=>x.startsWith("chip-"));
-    c.className="chip "+base+(c.dataset.cat!==cat?" off":"");
-  });
+const DD_ICONS={"all":"▪️","circ":"🚦","cond":"⚠️","equip":"⛑️","veh":"🛴","estat":"🅿️"};
+const DD_LABELS={"all":"Totes les infraccions","circ":"Circulació","cond":"Conducció","equip":"Equipament","veh":"Vehicle","estat":"Estacionament"};
+
+function togDD(){
+  const btn=document.getElementById("ddBtn");
+  const menu=document.getElementById("ddMenu");
+  const isOpen=menu.classList.contains("open");
+  if(isOpen){menu.classList.remove("open");btn.classList.remove("open");}
+  else{menu.classList.add("open");btn.classList.add("open");}
+}
+
+function pickCat(item){
+  cat=item.dataset.cat;
+  // update button appearance
+  const btn=document.getElementById("ddBtn");
+  btn.dataset.cat=cat;
+  document.getElementById("ddIcon").textContent=DD_ICONS[cat];
+  document.getElementById("ddLabel").textContent=DD_LABELS[cat];
+  // update checkmarks
+  document.querySelectorAll(".dd-check").forEach(c=>c.style.display="none");
+  const chk=document.getElementById("chk-"+cat);
+  if(chk)chk.style.display="";
+  // close menu
+  document.getElementById("ddMenu").classList.remove("open");
+  btn.classList.remove("open");
   render();
+}
+
+// close dropdown on outside click
+document.addEventListener("click",function(e){
+  const wrap=document.querySelector(".dd-wrap");
+  if(wrap && !wrap.contains(e.target)){
+    document.getElementById("ddMenu").classList.remove("open");
+    document.getElementById("ddBtn").classList.remove("open");
+  }
+});
+
+function setF(btn){
+  // legacy - not used but kept for safety
 }
 
 function clrSearch(){
